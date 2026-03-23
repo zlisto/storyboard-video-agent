@@ -272,15 +272,17 @@ def create_veo_video(
 
     result = getattr(operation, "result", None) or getattr(operation, "response", None)
     if not result or not getattr(result, "generated_videos", None):
-        err_detail = ""
+        err_parts = ["Veo generation failed: no video in response."]
         if getattr(operation, "error", None):
-            err_detail = f" Error: {operation.error}"
-        elif getattr(operation, "metadata", None):
-            err_detail = f" Metadata: {operation.metadata}"
-        raise RuntimeError(
-            "Veo generation failed: no video in response."
-            f"{err_detail}"
+            err_parts.append(f"Error: {operation.error}")
+        if getattr(operation, "metadata", None):
+            err_parts.append(f"Metadata: {operation.metadata}")
+        # Common causes: content policy rejection, model not enabled, quota
+        err_parts.append(
+            "Possible causes: content policy blocked the prompt/image; Veo model needs allowlist; "
+            "or try Runway instead (VIDEO_PROVIDER=runway in main.py)."
         )
+        raise RuntimeError(" ".join(err_parts))
 
     generated_video = result.generated_videos[0]
     client.files.download(file=generated_video)
@@ -1193,7 +1195,17 @@ def run_merge_agent(project_dir: str | Path, output_filename: str = "movie_final
          "-c", "copy", str(final)],
         check=True, capture_output=True,
     )
-    list_file.unlink(missing_ok=True)
+    # On Windows, ffmpeg may hold the file handle briefly—retry or ignore
+    import time
+    for _ in range(3):
+        try:
+            list_file.unlink(missing_ok=True)
+            break
+        except PermissionError:
+            time.sleep(0.5)
     for p in merged:
-        p.unlink(missing_ok=True)
+        try:
+            p.unlink(missing_ok=True)
+        except PermissionError:
+            pass
     return str(final)

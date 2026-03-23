@@ -21,7 +21,7 @@ from pathlib import Path
 # Shortcuts (optional). Leave empty/False for normal interactive flow.
 IDEA: str = ""  # If set, skip chat and extract from this text
 SKIP_DISCOVERY: bool = False  # If True, use default context (no chat)
-PROJECT_DIR: str = ""  # If set to existing path (e.g. projects/movie_xxx), skip to edit loop
+PROJECT_DIR: str = "projects/movie_2026-03-23_011548"  # If set to existing path (e.g. projects/movie_xxx), skip to edit loop
 
 # Fallback anchors when using IDEA or SKIP_DISCOVERY and agent doesn't extract paths
 ANCHOR_IMAGE_PATHS_FALLBACK: list[str] = ['anchor_images/zlisto.jpeg']  # e.g. ["images/lisa.jpg"]
@@ -40,7 +40,7 @@ GEMINI_VOICE_NAME = "Kore"
 GEMINI_TTS_MODEL = "gemini-2.5-flash-preview-tts"
 
 # Video: runway or veo
-VIDEO_PROVIDER = "runway"
+VIDEO_PROVIDER = "veo"
 RUNWAY_MODEL = "gen4_turbo"
 VEO_MODEL = "veo-3.1-fast-generate-preview"
 
