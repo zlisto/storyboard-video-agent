@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veo 3.1 API Reference — Python Examples</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      font-size: 1.25rem;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      color: #38bdf8;
+    }
+    h3 { font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #94a3b8; }
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 1.25rem;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+    }
+    th { background: #1e293b; color: #38bdf8; font-weight: 600; }
+    td { background: #0f172a; }
+    tr:nth-child(even) td { background: #1e293b; }
+    .param { font-family: 'JetBrains Mono', monospace; color: #f472b6; }
+    .required { color: #f87171; }
+    a { color: #38bdf8; }
+    .note { background: #1e3a5f; border-left: 4px solid #38bdf8; padding: 0.75rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Veo 3.1 API Reference</h1>
+  <p class="subtitle">Python examples and parameter reference for generating videos with the Gemini API. Based on <a href="https://ai.google.dev/gemini-api/docs/video" target="_blank">Google's Veo docs</a>.</p>
+
+  <h2>1. Text-to-Video (basic)</h2>
+  <pre><code class="language-python">import time
+from google import genai
+from google.genai import types
+
+client = genai.Client(api_key="YOUR_GEMINI_API_KEY")
+
+prompt = """A close up of two people staring at a cryptic drawing on a wall, torchlight flickering.
+A man murmurs, 'This must be it. That's the secret code.' 
+The woman looks at him and whispers excitedly, 'What did you find?'"""
+
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-preview",
+    prompt=prompt,
+)
+
+while not operation.done:
+    print("Waiting for video generation...")
+    time.sleep(10)
+    operation = client.operations.get(operation)
+
+video = operation.response.generated_videos[0]
+client.files.download(file=video.video)
+video.video.save("output.mp4")</code></pre>
+
+  <h2>2. Full parameters (all options)</h2>
+  <pre><code class="language-python">import time
+from google import genai
+from google.genai import types
+
+client = genai.Client(api_key="YOUR_GEMINI_API_KEY")
+
+# First frame for image-to-video (optional)
+first_frame = types.Image.from_file(location="path/to/image.png")
+
+# Reference images (up to 3) — Veo 3.1 only, preserves subject appearance
+ref1 = types.VideoGenerationReferenceImage(
+    image=types.Image.from_file(location="path/to/person.png"),
+    reference_type="asset",
+)
+
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-preview",
+    prompt="A woman walks through a sunlit garden, gentle breeze.",
+    image=first_frame,  # Optional: animate this as first frame
+    config=types.GenerateVideosConfig(
+        aspect_ratio="9:16",       # "16:9" or "9:16"
+        duration_seconds=8,        # 4, 6, or 8
+        resolution="720p",         # "720p", "1080p", "4k"
+        number_of_videos=1,
+        reference_images=[ref1],   # Optional: up to 3 (Veo 3.1 only)
+        # person_generation="allow_adult",  # Optional: region-dependent
+    ),
+)
+
+while not operation.done:
+    time.sleep(10)
+    operation = client.operations.get(operation)
+
+video = operation.response.generated_videos[0]
+client.files.download(file=video.video)
+video.video.save("output.mp4")</code></pre>
+
+  <h2>3. Video extension (extend a prior Veo video)</h2>
+  <pre><code class="language-python"># Extends a previously generated Veo video by ~7 seconds.
+# Input must be from a prior generate_videos() call.
+# Extension limited to 720p.
+
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-preview",
+    prompt="Track the scene as it continues into the garden.",
+    video=previous_operation.response.generated_videos[0].video,
+    config=types.GenerateVideosConfig(
+        number_of_videos=1,
+        resolution="720p",  # Required: 720p only for extension
+    ),
+)</code></pre>
+
+  <h2>4. Interpolation (first + last frame)</h2>
+  <pre><code class="language-python"># Generate video between two images.
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-preview",
+    prompt="Smooth transition from the first to the last frame.",
+    image=first_frame_image,
+    config=types.GenerateVideosConfig(
+        last_frame=last_frame_image,
+    ),
+)</code></pre>
+
+  <h2>Parameter Reference</h2>
+
+  <h3>model</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">veo-3.1-generate-preview</td><td>Full Veo 3.1, best quality</td></tr>
+      <tr><td class="param">veo-3.1-fast-generate-preview</td><td>Faster, optimized for speed</td></tr>
+      <tr><td class="param">veo-2.0-generate-001</td><td>Veo 2 (stable)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>config.aspect_ratio</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">"16:9"</td><td>Landscape (default)</td></tr>
+      <tr><td class="param">"9:16"</td><td>Portrait (vertical)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>config.duration_seconds</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">4</td><td>Shortest</td></tr>
+      <tr><td class="param">6</td><td>—</td></tr>
+      <tr><td class="param">8</td><td>Required when using extension, reference images, 1080p, or 4k</td></tr>
+    </tbody>
+  </table>
+
+  <h3>config.resolution</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">"720p"</td><td>Default. Required for video extension.</td></tr>
+      <tr><td class="param">"1080p"</td><td>8s duration only. 16:9 only for Veo 3.</td></tr>
+      <tr><td class="param">"4k"</td><td>8s duration only. Higher latency and cost.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>config.person_generation</h3>
+  <p class="note">Region-dependent. In EU, UK, CH, MENA: Veo 3 allows <code>allow_adult</code> only.</p>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">allow_all</td><td>Allow all person generation</td></tr>
+      <tr><td class="param">allow_adult</td><td>Adults only (required for image-to-video in some regions)</td></tr>
+      <tr><td class="param">dont_allow</td><td>No people (Veo 2 only)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Input parameters (instances)</h3>
+  <table>
+    <thead>
+      <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">prompt</td><td>string</td><td>Text description. Supports audio cues (dialogue in quotes, SFX, ambience).</td></tr>
+      <tr><td class="param">image</td><td>Image</td><td>First frame to animate (image-to-video).</td></tr>
+      <tr><td class="param">last_frame</td><td>Image</td><td>Ending frame for interpolation. Use with <code>image</code>.</td></tr>
+      <tr><td class="param">reference_images</td><td>list</td><td>Up to 3 images to guide content (person/product). Veo 3.1 only.</td></tr>
+      <tr><td class="param">video</td><td>Video</td><td>Prior Veo-generated video for extension. Veo 3.1 only.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Model capabilities</h2>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>Veo 3.1</th><th>Veo 2</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Audio</td><td>Natively generates audio</td><td>Silent only</td></tr>
+      <tr><td>Input types</td><td>Text, Image, Video (extension)</td><td>Text, Image</td></tr>
+      <tr><td>Resolution</td><td>720p, 1080p, 4k</td><td>720p</td></tr>
+      <tr><td>Duration</td><td>4, 6, 8 seconds</td><td>5–8 seconds</td></tr>
+    </tbody>
+  </table>
+
+  <p class="note" style="margin-top: 2rem;">Source: <a href="https://ai.google.dev/gemini-api/docs/video" target="_blank">ai.google.dev/gemini-api/docs/video</a></p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script>Prism.highlightAll();</script>
+</body>
+</html>

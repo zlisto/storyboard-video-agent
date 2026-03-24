@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Runway API Reference — Python Examples</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      font-size: 1.25rem;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      color: #38bdf8;
+    }
+    h3 { font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #94a3b8; }
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+    pre[class*="language-"] { padding: 1.25rem; background: #1e293b; border: 1px solid #334155; }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+    }
+    th { background: #1e293b; color: #38bdf8; font-weight: 600; }
+    td { background: #0f172a; }
+    tr:nth-child(even) td { background: #1e293b; }
+    .param { font-family: 'JetBrains Mono', monospace; color: #f472b6; }
+    a { color: #38bdf8; }
+    .note { background: #1e3a5f; border-left: 4px solid #38bdf8; padding: 0.75rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Runway API Reference</h1>
+  <p class="subtitle">Python examples and parameter reference for video generation. Based on <a href="https://docs.dev.runwayml.com/api/#tag/Start-generating/paths/~1v1~1image_to_video/post" target="_blank">Runway API docs</a>. Install: <code>pip install runwayml</code></p>
+
+  <h2>1. Image-to-Video (basic)</h2>
+  <pre><code class="language-python">from runwayml import RunwayML
+
+client = RunwayML(api_key="YOUR_RUNWAY_API_KEY")
+
+task = client.image_to_video.create(
+    model="gen4_turbo",
+    prompt_image="https://example.com/your-image.jpg",
+    prompt_text="A cute bunny hopping in a meadow",
+    duration=10,
+)
+
+result = task.wait_for_task_output(timeout=600)
+video_url = result.output[0]
+print(f"Video ready: {video_url}")</code></pre>
+
+  <h2>2. Image-to-Video (full parameters)</h2>
+  <pre><code class="language-python">from runwayml import RunwayML
+
+client = RunwayML(api_key="YOUR_RUNWAY_API_KEY")
+
+# Image: HTTPS URL, Runway URI (runway://...), or data URI (data:image/...)
+image_uri = "data:image/png;base64,iVBORw0KGgo..."  # or URL
+
+task = client.image_to_video.create(
+    model="gen4_turbo",
+    prompt_image=image_uri,
+    prompt_text="Camera slowly pans across the scene, soft natural light.",
+    ratio="720:1280",       # Output resolution
+    duration=8,             # 2–10 seconds
+    seed=42,                # Optional: for reproducibility
+    # content_moderation={"public_figure_threshold": "low"},  # Optional
+)
+
+result = task.wait_for_task_output(timeout=600)
+video_url = result.output[0]</code></pre>
+
+  <h2>3. Image-to-Video with prompt images array</h2>
+  <pre><code class="language-python"># Use array format when specifying position (e.g. first frame)
+task = client.image_to_video.create(
+    model="gen4_turbo",
+    prompt_image=[
+        {"uri": "https://example.com/frame.jpg", "position": "first"}
+    ],
+    prompt_text="Subtle movement, cinematic.",
+    ratio="1280:720",
+    duration=5,
+)</code></pre>
+
+  <h2>4. Text-to-Video (no image input)</h2>
+  <pre><code class="language-python"># Text-to-video: model options differ (no gen3a_turbo, gen4_turbo)
+task = client.text_to_video.create(
+    model="veo3.1",
+    prompt_text="A cute bunny hopping in a meadow at sunset",
+    ratio="1280:720",
+    duration=8,
+)
+
+result = task.wait_for_task_output(timeout=600)
+video_url = result.output[0]</code></pre>
+
+  <h2>5. Poll task status manually</h2>
+  <pre><code class="language-python">task = client.image_to_video.create(
+    model="gen4_turbo",
+    prompt_image=image_uri,
+    prompt_text="Gentle wind in the trees",
+    duration=5,
+)
+
+# Poll until done
+import time
+while task.status not in ("SUCCEEDED", "FAILED"):
+    time.sleep(5)
+    task = client.tasks.retrieve(task.id)
+
+if task.status == "SUCCEEDED":
+    video_url = task.output[0]</code></pre>
+
+  <h2>Parameter Reference</h2>
+
+  <h3>model (Image-to-Video)</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">gen4_turbo</td><td>Fast, cost-effective (5 credits/sec)</td></tr>
+      <tr><td class="param">gen4.5</td><td>Higher quality (12 credits/sec)</td></tr>
+      <tr><td class="param">gen3a_turbo</td><td>Older model</td></tr>
+      <tr><td class="param">veo3.1</td><td>Google Veo via Runway</td></tr>
+      <tr><td class="param">veo3.1_fast</td><td>Faster Veo</td></tr>
+      <tr><td class="param">veo3</td><td>Veo 3</td></tr>
+    </tbody>
+  </table>
+
+  <h3>model (Text-to-Video)</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">gen4.5</td><td>Best quality</td></tr>
+      <tr><td class="param">veo3.1</td><td>Google Veo via Runway</td></tr>
+      <tr><td class="param">veo3.1_fast</td><td>Faster Veo</td></tr>
+      <tr><td class="param">veo3</td><td>Veo 3</td></tr>
+    </tbody>
+  </table>
+
+  <h3>ratio (Image-to-Video)</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">1280:720</td><td>Landscape 16:9</td></tr>
+      <tr><td class="param">720:1280</td><td>Portrait 9:16 (vertical)</td></tr>
+      <tr><td class="param">1104:832</td><td>4:3</td></tr>
+      <tr><td class="param">960:960</td><td>Square 1:1</td></tr>
+      <tr><td class="param">832:1104</td><td>3:4 portrait</td></tr>
+      <tr><td class="param">1584:672</td><td>Ultrawide</td></tr>
+    </tbody>
+  </table>
+
+  <h3>ratio (Text-to-Video)</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">1280:720</td><td>Landscape</td></tr>
+      <tr><td class="param">720:1280</td><td>Portrait (vertical)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>duration</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>2–10</td><td>Integer seconds. Longer = more credits.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>prompt_image (Image-to-Video)</h3>
+  <table>
+    <thead>
+      <tr><th>Format</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">HTTPS URL</td><td>Public image URL</td></tr>
+      <tr><td class="param">runway://...</td><td>Runway upload URI (from uploads API)</td></tr>
+      <tr><td class="param">data:image/...</td><td>Base64 data URI</td></tr>
+      <tr><td>Array</td><td><code>[{"uri": "...", "position": "first"}]</code> for positioned frames</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Optional parameters</h3>
+  <table>
+    <thead>
+      <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">seed</td><td>int (0–4294967295)</td><td>Reproducibility. Same seed ≈ similar output.</td></tr>
+      <tr><td class="param">content_moderation</td><td>object</td><td><code>{"public_figure_threshold": "auto"|"low"}</code></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Headers</h2>
+  <p class="note">Set <code>X-Runway-Version: 2024-11-06</code> on all requests. The Python SDK handles this automatically.</p>
+
+  <h2>Credit costs (approx.)</h2>
+  <table>
+    <thead>
+      <tr><th>Model</th><th>Credits/sec</th><th>5 sec video</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>gen4_turbo</td><td>5</td><td>~25 credits</td></tr>
+      <tr><td>gen4.5</td><td>12</td><td>~60 credits</td></tr>
+      <tr><td>act_two</td><td>5</td><td>~25 credits</td></tr>
+      <tr><td>veo3.1_fast</td><td>15</td><td>~75 credits</td></tr>
+      <tr><td>veo3 / veo3.1</td><td>40</td><td>~200 credits</td></tr>
+    </tbody>
+  </table>
+
+  <p class="note" style="margin-top: 2rem;">Source: <a href="https://docs.dev.runwayml.com/api" target="_blank">docs.dev.runwayml.com/api</a></p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script>Prism.highlightAll();</script>
+</body>
+</html>

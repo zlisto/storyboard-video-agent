@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kling Omni API Reference — Python Examples</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      line-height: 1.6;
+      padding: 2rem;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      margin-bottom: 2rem;
+    }
+    h2 {
+      font-size: 1.25rem;
+      margin-top: 2.5rem;
+      margin-bottom: 1rem;
+      color: #38bdf8;
+    }
+    h3 { font-size: 1rem; margin-top: 1.5rem; margin-bottom: 0.5rem; color: #94a3b8; }
+    pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 0.75rem 0;
+    }
+    pre[class*="language-"] { padding: 1.25rem; background: #1e293b; border: 1px solid #334155; }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 0.85em; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid #334155;
+      padding: 0.6rem 0.75rem;
+      text-align: left;
+    }
+    th { background: #1e293b; color: #38bdf8; font-weight: 600; }
+    td { background: #0f172a; }
+    tr:nth-child(even) td { background: #1e293b; }
+    .param { font-family: 'JetBrains Mono', monospace; color: #f472b6; }
+    a { color: #38bdf8; }
+    .note { background: #1e3a5f; border-left: 4px solid #38bdf8; padding: 0.75rem 1rem; margin: 1rem 0; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <h1>Kling Omni API Reference</h1>
+  <p class="subtitle">Python examples and parameter reference for Kling's Omni video model (O1 and v3). Based on <a href="https://app.klingai.com/global/dev/document-api/apiReference/model/OmniVideo" target="_blank">Kling Omni docs</a> and <a href="https://useapi.net/docs/api-kling-v1/post-kling-videos-omni" target="_blank">useapi.net</a>. No SDK—use <code>pip install requests</code>.</p>
+
+  <h2>Workflows</h2>
+  <p>Omni supports multiple workflows. The workflow is chosen by which inputs you provide:</p>
+  <table>
+    <thead>
+      <tr><th>Inputs</th><th>Workflow</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>frame_start</code> (+ optional <code>frame_end</code>)</td><td><strong>Frames</strong> — first and last frame interpolation</td></tr>
+      <tr><td><code>video_1</code> + <code>video_mode=transform</code></td><td><strong>Video Transform</strong> — modify a reference video</td></tr>
+      <tr><td><code>video_1</code> + <code>video_mode=reference</code> (default)</td><td><strong>Video Reference</strong> — style guided by video</td></tr>
+      <tr><td>Images/elements only, or text-only</td><td><strong>Default</strong> — text-to-video with optional refs</td></tr>
+    </tbody>
+  </table>
+
+  <h2>1. Default workflow (text + image reference)</h2>
+  <pre><code class="language-python">import requests
+
+API_URL = "https://api.useapi.net/v1/kling/videos/omni"  # or Kling official API
+headers = {
+    "Authorization": "Bearer YOUR_API_TOKEN",
+    "Content-Type": "application/json",
+}
+
+# Reference images in prompt with @image_1, @image_2, etc.
+response = requests.post(API_URL, headers=headers, json={
+    "prompt": "A woman @image_1 dancing elegantly in a ballroom",
+    "duration": "5",
+    "aspect_ratio": "16:9",
+    "image_1": "https://example.com/person.jpg",
+})
+
+task = response.json()
+task_id = task["task"]["id"]
+print(f"Task: {task_id}")
+# Poll GET /tasks/{task_id} for status</code></pre>
+
+  <h2>2. Frames workflow (first + last frame)</h2>
+  <pre><code class="language-python"># Generate video between start and end frame images
+# Aspect ratio is auto-derived from input when using frames
+response = requests.post(API_URL, headers=headers, json={
+    "prompt": "Smooth cinematic transition from start to end",
+    "duration": "5",
+    "frame_start": "https://example.com/start_frame.jpg",
+    "frame_end": "https://example.com/end_frame.jpg",  # optional
+})
+
+# When using frames: image_N, element_N, video_1 are NOT allowed
+# aspect_ratio is always "auto" for frames workflow</code></pre>
+
+  <h2>3. Frames workflow (start frame only)</h2>
+  <pre><code class="language-python"># Animate from a single start frame
+response = requests.post(API_URL, headers=headers, json={
+    "prompt": "Scene comes to life with gentle movement",
+    "duration": "5",
+    "frame_start": "https://example.com/first_frame.jpg",
+})</code></pre>
+
+  <h2>4. Video reference workflow</h2>
+  <pre><code class="language-python"># Use reference video to guide style/motion
+# Duration is locked to video length (3-10s O1, 3-15s v3)
+response = requests.post(API_URL, headers=headers, json={
+    "prompt": "Scene like @video_1 but in a winter setting",
+    "video_1": "https://example.com/reference.mp4",
+    "video_mode": "reference",  # default
+    "keep_audio": False,        # optional
+})</code></pre>
+
+  <h2>5. Video transform workflow</h2>
+  <pre><code class="language-python"># Directly transform/modify the reference video
+response = requests.post(API_URL, headers=headers, json={
+    "prompt": "Make it look like a vintage film",
+    "video_1": "https://example.com/source.mp4",
+    "video_mode": "transform",
+})</code></pre>
+
+  <h2>6. Multi-shot (v3 only)</h2>
+  <pre><code class="language-python"># Split into multiple shots with separate prompts
+# Min 2 shots, total duration 3-15 seconds
+response = requests.post(API_URL, headers=headers, json={
+    "omni_version": "v3",
+    "shot_1_prompt": "A cat walks into a room",
+    "shot_1_duration": "3",
+    "shot_2_prompt": "The cat jumps onto the couch",
+    "shot_2_duration": "4",
+})
+# Cannot use prompt or duration with multi-shot</code></pre>
+
+  <h2>Version comparison (O1 vs v3)</h2>
+  <table>
+    <thead>
+      <tr><th>Feature</th><th>v3</th><th>O1</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Duration</td><td>3-15s</td><td>3-10s</td></tr>
+      <tr><td>Multi-shot</td><td>✅</td><td>❌</td></tr>
+      <tr><td>Aspect ratio</td><td>16:9, 9:16, 1:1</td><td>16:9, 9:16, 1:1</td></tr>
+      <tr><td>Frames: aspect_ratio</td><td>auto only</td><td>auto only</td></tr>
+      <tr><td>VIDEO elements</td><td>✅</td><td>❌ (IMAGE only)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Parameter Reference</h2>
+
+  <h3>omni_version</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">v3</td><td>Default. Longer duration, multi-shot, video elements.</td></tr>
+      <tr><td class="param">o1</td><td>Shorter range, no multi-shot.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>mode</h3>
+  <table>
+    <thead>
+      <tr><th>Value</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">std</td><td>Default. Standard generation.</td></tr>
+      <tr><td class="param">pro</td><td>Professional mode (higher quality).</td></tr>
+    </tbody>
+  </table>
+
+  <h3>duration</h3>
+  <table>
+    <thead>
+      <tr><th>Scenario</th><th>O1</th><th>v3</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Text-only (no inputs)</td><td>5, 10</td><td>3-15</td></tr>
+      <tr><td>Single start frame</td><td>5, 10</td><td>3-15</td></tr>
+      <tr><td>Images/elements</td><td>3-10</td><td>3-15</td></tr>
+      <tr><td>Both frames (start + end)</td><td>3-10</td><td>3-15</td></tr>
+      <tr><td>With video_1</td><td>Locked to video</td><td>Locked to video</td></tr>
+    </tbody>
+  </table>
+  <p class="note">VIP required for durations 7+ (O1) or 7-15 (v3).</p>
+
+  <h3>aspect_ratio</h3>
+  <table>
+    <thead>
+      <tr><th>Workflow</th><th>Allowed</th><th>Default</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Default</td><td>16:9, 9:16, 1:1</td><td>16:9</td></tr>
+      <tr><td>Frames</td><td>auto only (from input)</td><td>auto</td></tr>
+      <tr><td>Video Reference/Transform</td><td>16:9, 9:16, 1:1</td><td>16:9</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Prompt reference syntax</h3>
+  <table>
+    <thead>
+      <tr><th>Input</th><th>Syntax</th><th>Example</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Images</td><td><code>@image_1</code>, <code>@image_2</code>, …</td><td>"A woman @image_1 dancing"</td></tr>
+      <tr><td>Elements</td><td><code>@element_1</code> or <code>@object_1</code>, …</td><td>"Character @element_1 walks"</td></tr>
+      <tr><td>Video</td><td><code>@video_1</code></td><td>"Like @video_1 but in winter"</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Input limits by workflow</h3>
+  <table>
+    <thead>
+      <tr><th>Workflow</th><th>Max Images</th><th>Max Elements</th><th>Max Combined</th><th>Max Video</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Default</td><td>7</td><td>7</td><td>7</td><td>0</td></tr>
+      <tr><td>Frames</td><td>0</td><td>0</td><td>0</td><td>0</td></tr>
+      <tr><td>Video Reference</td><td>4</td><td>4</td><td>4</td><td>1</td></tr>
+      <tr><td>Video Transform</td><td>4</td><td>4</td><td>4</td><td>1</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Other parameters</h3>
+  <table>
+    <thead>
+      <tr><th>Parameter</th><th>Type</th><th>Description</th></tr>
+    </thead>
+    <tbody>
+      <tr><td class="param">count</td><td>1-4</td><td>Videos to generate. 2-4 requires VIP.</td></tr>
+      <tr><td class="param">keep_audio</td><td>bool</td><td>Keep audio from reference video. Default: false.</td></tr>
+      <tr><td class="param">replyUrl</td><td>string</td><td>Callback URL for async results.</td></tr>
+    </tbody>
+  </table>
+
+  <p class="note" style="margin-top: 2rem;">
+    Sources: <a href="https://app.klingai.com/global/dev/document-api/apiReference/model/OmniVideo" target="_blank">Kling Omni (app.klingai.com)</a>,
+    <a href="https://useapi.net/docs/api-kling-v1/post-kling-videos-omni" target="_blank">useapi.net Kling Omni</a>
+  </p>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script>Prism.highlightAll();</script>
+</body>
+</html>

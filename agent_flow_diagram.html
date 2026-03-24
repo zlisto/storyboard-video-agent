@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agentic Video Maker - Agent Flow</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'DM Sans', -apple-system, sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #1a1a2e;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 2rem;
+      letter-spacing: -0.02em;
+      color: #fff;
+    }
+    .flow {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 0.25rem;
+      justify-content: center;
+    }
+    .agent {
+      background: linear-gradient(145deg, #0369a1 0%, #0284c7 100%);
+      border: 2px solid #0c4a6e;
+      border-radius: 10px;
+      padding: 0.75rem 0.9rem;
+      width: 130px;
+      max-width: 130px;
+      text-align: center;
+      flex-shrink: 0;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .agent:nth-child(3) { background: linear-gradient(145deg, #6d28d9 0%, #5b21b6 100%); border-color: #4c1d95; }
+    .agent:nth-child(5) { background: linear-gradient(145deg, #be123c 0%, #9f1239 100%); border-color: #881337; }
+    .agent:nth-child(7) { background: linear-gradient(145deg, #15803d 0%, #166534 100%); border-color: #14532d; }
+    .agent:nth-child(9) { background: linear-gradient(145deg, #b45309 0%, #92400e 100%); border-color: #78350f; }
+    .agent:nth-child(11) { background: linear-gradient(145deg, #be185d 0%, #9d174d 100%); border-color: #831843; }
+    .agent:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+    }
+    .agent-name {
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-bottom: 0.2rem;
+      color: #f8fafc;
+    }
+    .agent-desc {
+      font-size: 0.7rem;
+      color: #e2e8f0;
+      line-height: 1.2;
+      opacity: 0.95;
+    }
+    .arrow {
+      color: #fef3c7;
+      font-size: 1.25rem;
+      padding: 0 0.25rem;
+      flex-shrink: 0;
+    }
+    @media (max-width: 900px) {
+      .flow {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .arrow {
+        transform: rotate(90deg);
+        padding: 0.25rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Agentic Video Maker — Agent Flow</h1>
+  <div class="flow">
+    <div class="agent">
+      <div class="agent-name">Discovery</div>
+      <div class="agent-desc">Jarvis chats for idea, style</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="agent">
+      <div class="agent-name">Storyboard</div>
+      <div class="agent-desc">Script + images</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="agent">
+      <div class="agent-name">Narration</div>
+      <div class="agent-desc">TTS audio</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="agent">
+      <div class="agent-name">Video</div>
+      <div class="agent-desc">Runway/Veo</div>
+    </div>
+    <div class="arrow">→</div>
+    <div class="agent">
+      <div class="agent-name">Merge</div>
+      <div class="agent-desc">movie_final</div>
+    </div>
+  </div>
+</body>
+</html>
