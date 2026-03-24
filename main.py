@@ -21,10 +21,10 @@ from pathlib import Path
 # Shortcuts (optional). Leave empty/False for normal interactive flow.
 IDEA: str = ""  # If set, skip chat and extract from this text
 SKIP_DISCOVERY: bool = False  # If True, use default context (no chat)
-PROJECT_DIR: str = "projects/movie_2026-03-23_011548"  # If set to existing path (e.g. projects/movie_xxx), skip to edit loop
+PROJECT_DIR: str = ""  # If set to existing path (e.g. projects/movie_xxx), skip to edit loop
 
 # Fallback anchors when using IDEA or SKIP_DISCOVERY and agent doesn't extract paths
-ANCHOR_IMAGE_PATHS_FALLBACK: list[str] = ['anchor_images/zlisto.jpeg']  # e.g. ["images/lisa.jpg"]
+ANCHOR_IMAGE_PATHS_FALLBACK: list[str] = ['anchor_images/zlisto_prison_enhanced.jpg']  # e.g. ["images/lisa.jpg"]
 
 # Chat/LLM model (Gemini)
 CHAT_MODEL = "gemini-3-flash-preview"
